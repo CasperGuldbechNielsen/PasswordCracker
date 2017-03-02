@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PasswordCrackerSlave
@@ -18,6 +19,8 @@ namespace PasswordCrackerSlave
         private static IPAddress _slaveIp;
         private static string _machineName = Environment.MachineName;
         private static string _stopMessage;
+        private static TcpClient slaveClient;
+        private static bool _closing;
 
         static void Main(string[] args)
         {
@@ -29,22 +32,68 @@ namespace PasswordCrackerSlave
             Console.WriteLine("Current IP Address is: " + GetLocalIP());
 
             // establish TCP connection to master
-            TcpClient slaveClient = new TcpClient(_masterIp.ToString(), _masterPort);
+
+            try
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        slaveClient = new TcpClient(_masterIp.ToString(), _masterPort);
+                    }
+                    catch (Exception)
+                    {
+                        _closing = true;
+                        Console.WriteLine("No connection established");
+                        Thread.Sleep(10000);
+                    }
+
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("fubar");
+
+            }
+            finally
+            {
+                if (_closing)
+                {
+                    Console.WriteLine("Closing down in 5 seconds");
+                    Thread.Sleep(5000);
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    //´do nothing
+                }
+                
+            }
 
             NetworkStream stream = slaveClient.GetStream();
             StreamReader streamReader = new StreamReader(stream);
             StreamWriter streamWriter = new StreamWriter(stream) { AutoFlush = true };
 
             // JSON encode SlaveIp & MachineName
-            var jsonIp = JsonConvert.SerializeObject(_slaveIp);
-            var jsonMn = JsonConvert.SerializeObject(_machineName);
+
+            StringBuilder build = new StringBuilder();
+
+            build.Append("Name:");
+            build.Append(_machineName);
+            build.Append(",");
+            build.Append("Ip:");
+            build.Append(_slaveIp);
+
+            // serialize
+            var json = JsonConvert.SerializeObject(build);
 
             // Phone home with MachineName & SlaveIp
             while (true)
             {
-                streamWriter.WriteLine(jsonIp); //send Slave IP
-                streamWriter.WriteLine(jsonMn); //send MachineName
+                streamWriter.WriteLine(json); //send MachineName
+                break;
             }
+
 
             #region Stop functionality
             // Temporary stop functionality on slave end
@@ -69,9 +118,9 @@ namespace PasswordCrackerSlave
                 {
                     return ip.ToString();
                 }
-                throw new Exception("Local IP-Address was not found");
+                
             }
-            
+            return "no Ip found";
         }
     }
 }
