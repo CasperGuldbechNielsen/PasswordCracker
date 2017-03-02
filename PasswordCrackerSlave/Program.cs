@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -43,6 +44,10 @@ namespace PasswordCrackerSlave
                 // Read input
 
                 _message = streamReader.ReadLine();
+
+                // Deserialize the message
+
+                var jsonMessage = JsonConvert.DeserializeObject(_message);
 
                 // Do stuff with the message
 
