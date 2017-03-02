@@ -45,14 +45,13 @@ namespace PasswordCrackerMaster
 
                 _message = streamReader.ReadLine();
 
-                // Deserialize the message
-
-                var jsonMessage = JsonConvert.DeserializeObject(_message);
-
                 // Do stuff with the message
 
                 if (!string.IsNullOrEmpty(_message))
                 {
+                    // Deserialize the message
+                    var jsonMessage = JsonConvert.DeserializeObject(_message);
+                    
                     // Get slave IP and such..
                     Console.WriteLine("Client wrote: " + _message);
                 }
