@@ -21,7 +21,7 @@ namespace PasswordCrackerSlave
         private static string _stopMessage;
         private static TcpClient slaveClient;
         private static bool _closing;
-        private static List<string> recievedData;
+        private static Dictionary<string, List<string>> _deserializedData;
 
         static void Main(string[] args)
         {
@@ -100,8 +100,7 @@ namespace PasswordCrackerSlave
             while (true)
             {
                 //
-                List<string> deserializedData = JsonConvert.DeserializeObject<List<string>>(streamReader.ReadLine());
-                recievedData.AddRange(deserializedData); 
+                _deserializedData = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(streamReader.ReadLine());
                 break;
             }
             
