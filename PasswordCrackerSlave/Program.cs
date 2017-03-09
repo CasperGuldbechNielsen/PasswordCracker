@@ -94,6 +94,9 @@ namespace PasswordCrackerSlave
                 break;
             }
 
+            //TODO: Recieve work from Master client
+            //TODO: Start Dictionary Attack on workload
+            //TODO: Send result back to Master
 
             #region Stop functionality
             // Temporary stop functionality on slave end
