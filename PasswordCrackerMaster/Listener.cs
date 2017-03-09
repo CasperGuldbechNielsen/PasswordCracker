@@ -17,6 +17,7 @@ namespace PasswordCrackerMaster
         private string _jsonMessage;
         private string _jsonSendList;
         private string _threadName;
+        private Dictionary<string, byte[]> _password;
         private List<string> _slaveListToSend;
         private List<string> _slaveList;
 
@@ -26,13 +27,14 @@ namespace PasswordCrackerMaster
 
         private MasterHandler _handler;
 
-        public Listener(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, string threadName)
+        public Listener(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, string threadName, Dictionary<string, byte[]> password)
         {
             _rowsSent = rowsSent;
             _listNumsToSend = listNumsToSend;
             _slaveListToSend = slaveListToSend;
             _slaveList = slaveList;
             _threadName = threadName;
+            _password = password;
 
             _handler = new MasterHandler();
         }
@@ -77,7 +79,7 @@ namespace PasswordCrackerMaster
 
                 Console.WriteLine("Sending work to slave...");
 
-                _jsonSendList = _handler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList);
+                _jsonSendList = _handler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
 
                 // Send data
                 streamWriter.Write(_jsonSendList);

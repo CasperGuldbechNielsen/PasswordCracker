@@ -55,9 +55,9 @@ namespace PasswordCrackerMaster
             get { return _serverSocket; }
         }
 
-        public void StartThreading(TcpListener socket, string threadName)
+        public void StartThreading(TcpListener socket, string threadName, Dictionary<string, byte[]> password)
         {
-            _listen = new Listener(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, threadName);
+            _listen = new Listener(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, threadName, password);
             _listen.Listen(socket);
         }
     }

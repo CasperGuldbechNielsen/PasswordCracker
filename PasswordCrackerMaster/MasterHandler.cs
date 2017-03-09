@@ -10,9 +10,9 @@ namespace PasswordCrackerMaster
 {
     class MasterHandler
     {
-        private string jsonSendList;
+        private string _jsonSendList;
 
-        public string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList)
+        public string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, Dictionary<string, byte[]> password)
         {
             for (int i = (rowsSent + 1); rowsSent < listNumsToSend; i++)
             {
@@ -23,7 +23,14 @@ namespace PasswordCrackerMaster
 
             Console.WriteLine($"Sending {listLenght} lines to slave");
 
-            return jsonSendList = JsonConvert.SerializeObject(slaveListToSend);
+            // TODO: Also send password
+            List<object> objectList = new List<object>()
+            {
+                { password },
+                { slaveListToSend }
+            };
+
+            return _jsonSendList = JsonConvert.SerializeObject(objectList);
         }
     }
 }
