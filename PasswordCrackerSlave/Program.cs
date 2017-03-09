@@ -21,6 +21,7 @@ namespace PasswordCrackerSlave
         private static string _stopMessage;
         private static TcpClient slaveClient;
         private static bool _closing;
+        private static List<string> recievedData;
 
         static void Main(string[] args)
         {
@@ -83,6 +84,7 @@ namespace PasswordCrackerSlave
             build.Append(",");
             build.Append("Ip:");
             build.Append(_slaveIp);
+            // "Name:_machineName,Ip:_slaveIp"
 
             // serialize
             var json = JsonConvert.SerializeObject(build);
@@ -93,10 +95,20 @@ namespace PasswordCrackerSlave
                 streamWriter.WriteLine(json); //send MachineName
                 break;
             }
-
-            //TODO: Recieve work from Master client
+            
+            //Recieve Workload from master
+            while (true)
+            {
+                //
+                List<string> deserializedData = JsonConvert.DeserializeObject<List<string>>(streamReader.ReadLine());
+                recievedData.AddRange(deserializedData); 
+                break;
+            }
+            
             //TODO: Start Dictionary Attack on workload
-            //TODO: Send result back to Master
+
+
+            //TODO: Send result back to Master in a dictionary <1,"passPlain">/<0,"">
 
             #region Stop functionality
             // Temporary stop functionality on slave end
