@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -21,10 +22,15 @@ namespace PasswordCrackerSlave
         private static string _stopMessage;
         private static TcpClient slaveClient;
         private static bool _closing;
-        private static List<string> recievedData;
+        //private static Dictionary<string,List<string>> Dict;
 
+        //this is a real dictionary put in a list
+        private static List<object> list;
+        private static HashAlgorithm _hashAlgorithm;
+       
         static void Main(string[] args)
         {
+           
             // startup
             Console.WriteLine("Slave Node started");
 
@@ -99,13 +105,50 @@ namespace PasswordCrackerSlave
             //Recieve Workload from master
             while (true)
             {
-                //
-                List<string> deserializedData = JsonConvert.DeserializeObject<List<string>>(streamReader.ReadLine());
-                recievedData.AddRange(deserializedData); 
+                list = JsonConvert.DeserializeObject<List<object>>(streamReader.ReadLine());
                 break;
+                //Dict = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(streamReader.ReadLine());
+                //break;
             }
-            
-            //TODO: Start Dictionary Attack on workload
+
+            //TODO: Start Dictionary Attack on 
+
+
+            foreach (var item in list)
+                {
+                if (item.GetType() == typeof(List<string>))
+                    {
+                    //do stuff with list
+                    ListWork(item);
+                    }
+                else if (item.GetType() == typeof(Dictionary<string, byte[]>))
+                    {
+                    //do stuff with dictionary
+                    DictWork();
+                    }
+                }
+
+
+
+            #region AttemptNr1
+
+            //string match = "";
+
+            //foreach (var item in Dict)
+            //{
+            //    foreach (var dictValue in Dict.Values)
+            //    {
+            //        match = dictValue.ToString();
+            //        var hasheditem = _hashAlgorithm.ComputeHash(Encoding.ASCII.GetBytes(dictValue.ToString()));
+            //        if (CompareHashes(Encoding.ASCII.GetBytes(item.Key), hasheditem))
+            //            break;
+            //        }
+
+            //    if (CompareHashes(Encoding.ASCII.GetBytes(item.Key), _hashAlgorithm.ComputeHash(Encoding.ASCII.GetBytes(match))))
+
+            //    // success!!!
+            //}
+            #endregion
 
 
             //TODO: Send result back to Master in a dictionary <1,"passPlain">/<0,"">
@@ -124,6 +167,34 @@ namespace PasswordCrackerSlave
             #endregion
         }
 
+        public static void ListWork(object item)
+            {
+            
+                
+            }
+
+        public static void DictWork()
+        {
+            
+        }
+        public static bool CompareHashes(byte[] pwdHash, byte[] compareHash)
+            {
+            var pwdLenght = pwdHash.Length;
+            var compareLenght = compareHash.Length;
+
+            if (pwdLenght != compareLenght)
+                return false;
+
+            bool match = false;
+
+            for (int i = 0; i < pwdLenght; i++)
+            {
+                match = Equals(pwdHash[i], compareHash[i]);
+            }
+
+            return match;
+            }
+
         public static string GetLocalIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -137,5 +208,24 @@ namespace PasswordCrackerSlave
             }
             return "no Ip found";
         }
-    }
+        // take in the string dictionary item , hash it and return it as a byte
+        //public static byte[] RunHash(string wordToHash)
+        //{
+        //    _hashAlgorithm = new SHA1CryptoServiceProvider();
+        //    char[] wordAsChar = wordToHash.ToCharArray();
+        //    byte[] wordAsBytes = Array.ConvertAll(wordAsChar, DoConversion());
+        //    byte[] encryptedPassword = _hashAlgorithm.ComputeHash(wordAsBytes);
+
+        //    return encryptedPassword;
+        //}
+        //private static Converter<char, byte> DoConversion()
+        //    {
+        //    return Converter;
+        //    }
+        //private static byte CharToByte(char ch)
+        //    {
+        //    return Convert.ToByte(ch);
+        //    }
+
+        }
 }
