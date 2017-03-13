@@ -17,6 +17,11 @@ namespace PasswordCrackerMaster
         private string _jsonMessage;
         private string _jsonSendList;
         private string _threadName;
+        private string[] _slaveInfo;
+        private string[] _slaveNameArr;
+        private string[] _responseArr;
+        private string[] slaveInfo;
+        private bool goOn = false;
         private Dictionary<string, byte[]> _password;
         private List<string> _slaveListToSend;
         private List<string> _slaveList;
@@ -43,112 +48,156 @@ namespace PasswordCrackerMaster
         {
             while (true)
             {
-                Console.WriteLine($"{_threadName}: Waiting for a slave to connect");
+                AwaitSlaveConn(socket);
 
-                TcpClient serverClient = socket.AcceptTcpClient();
+                SlaveContact();
 
-                // Setup streams
+                Work("first task");
+            }
+        }
 
-                stream = serverClient.GetStream();
-                streamReader = new StreamReader(stream);
-                streamWriter = new StreamWriter(stream) { AutoFlush = true };
+        public void Work(string workType)
+        {
+            SendWork(workType);
 
-                // Read input
-
-                _message = streamReader.ReadLine();
-
-                // Do stuff with the message
-
-                if (!string.IsNullOrEmpty(_message))
+            while (goOn)
+            {
+                try
                 {
-                    // Deserialize the message
-                    _jsonMessage = Convert.ToString(JsonConvert.DeserializeObject(_message));
+                    goOn = EvaluateSlaveResponse();
+                    if (goOn)
+                        Stop();
                 }
-                else
+                catch (Exception e)
                 {
-                    // do something
+                    Console.WriteLine(e.Message);
                 }
+            }
+        }
 
-                string[] slaveInfo = _jsonMessage.ToString().Split(',');
+        public void SendWork(string workType)
+        {
+            Console.WriteLine($"Sending {workType} to slave...");
 
+            _jsonSendList = _handler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
+
+            // Send data
+            streamWriter.Write(_jsonSendList);
+
+            // Wait for slave to respond
+            var slaveResponse = streamReader.ReadLine();
+
+            if (!string.IsNullOrEmpty(slaveResponse))
+            {
+                // Deserialize the message
+                var response = Convert.ToString(JsonConvert.DeserializeObject(slaveResponse));
+
+                _responseArr = _jsonMessage.ToString().Split(',');
+                _slaveNameArr = slaveInfo[0].Split(':');
+                _responseArr = slaveInfo[1].Split(':');
+
+                Console.WriteLine($"Slave: {_slaveNameArr[1]} responded: {_responseArr}");
+            }
+            else
+            {
+                // do something
+                Console.WriteLine("Something went wrong. Closing thread.");
+                Stop();
+            }
+        }
+
+        public void SlaveContact()
+        {
+            // Read input
+            _message = streamReader.ReadLine();
+
+            // Do stuff with the message
+            if (!string.IsNullOrEmpty(_message))
+            {
+                // Deserialize the message
+                _jsonMessage = Convert.ToString(JsonConvert.DeserializeObject(_message));
+
+                slaveInfo = _jsonMessage.ToString().Split(',');
                 string[] slaveName = slaveInfo[0].Split(':');
                 string[] slaveIp = slaveInfo[1].Split(':');
 
                 // Get slave IP and such..
                 Console.WriteLine($"Slave connected with name {slaveName[1]} nd IP {slaveIp[1]}.");
+            }
+            else
+            {
+                // do something
+                Console.WriteLine("Something went wrong. Closing thread.");
+                Stop();
+            }
+        }
 
-                Console.WriteLine("Sending work to slave...");
+        public void AwaitSlaveConn(TcpListener socket)
+        {
+            Console.WriteLine($"{_threadName}: Waiting for a slave to connect");
 
-                _jsonSendList = _handler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
+            TcpClient serverClient = socket.AcceptTcpClient();
 
-                // Send data
-                streamWriter.Write(_jsonSendList);
+            // Setup streams
 
-                // Wait for slave to respond
-                var slaveResponse = streamReader.ReadLine();
+            stream = serverClient.GetStream();
+            streamReader = new StreamReader(stream);
+            streamWriter = new StreamWriter(stream) { AutoFlush = true };
+        }
 
-                if (!string.IsNullOrEmpty(slaveResponse))
+        public bool EvaluateSlaveResponse()
+        {
+            // Wait for slave to finish
+            var slaveNewResponse = streamReader.ReadLine();
+
+            if (!string.IsNullOrEmpty(slaveNewResponse))
+            {
+                // Deserialize the message
+                var response = Convert.ToString(JsonConvert.DeserializeObject(slaveNewResponse));
+
+                string[] responseArr = _jsonMessage.ToString().Split(',');
+
+                string[] slaveNameArr = _slaveInfo[0].Split(':');
+                string[] slaveResponseArr = _slaveInfo[1].Split(':');
+
+                Console.WriteLine($"Slave: {slaveNameArr[1]} responded: {slaveResponseArr}");
+
+                if (slaveResponseArr[1] == "Done")
                 {
-                    // Deserialize the message
-                    var response = Convert.ToString(JsonConvert.DeserializeObject(slaveResponse));
+                    Console.WriteLine($"Slave: {slaveNameArr[1]} is done with his work");
 
-                    string[] responseArr = _jsonMessage.ToString().Split(',');
+                    /*
+                     * 
+                     * We need to evaluate slave response here. Get the result back and so on. 
+                     * Digest response and handle a failed crack attempt with a new send work.
+                     * 
+                     * 
+                     */
 
-                    string[] slaveNameArr = slaveInfo[0].Split(':');
-                    string[] slaveResponseArr = slaveInfo[1].Split(':');
-
-                    Console.WriteLine($"Slave: {slaveNameArr[1]} responded: {slaveResponseArr}");
-                }
-                else
-                {
-                    // do something
-                }
-
-                while (true)
-                {
-                    // Wait for slave to finish
-                    var slaveNewResponse = streamReader.ReadLine();
-
-                    if (!string.IsNullOrEmpty(slaveNewResponse))
+                    if (false /* Some dictionary recieved <key (integer), value (string:plain_text_pass)*/)
                     {
-                        // Deserialize the message
-                        var response = Convert.ToString(JsonConvert.DeserializeObject(slaveNewResponse));
-
-                        string[] responseArr = _jsonMessage.ToString().Split(',');
-
-                        string[] slaveNameArr = slaveInfo[0].Split(':');
-                        string[] slaveResponseArr = slaveInfo[1].Split(':');
-
-                        Console.WriteLine($"Slave: {slaveNameArr[1]} responded: {slaveResponseArr}");
-
-                        if (slaveResponseArr[1] == "Done")
+                        if (true /* Some dictionary.key == 1 */)
                         {
-                            Console.WriteLine($"Slave: {slaveNameArr[1]} is done with his work");
-
-                            if (false /* Some dictionary recieved <key (integer), value (string:plain_text_pass)*/)
-                            {
-                                if (true /* Some dictionary.key == 1 */)
-                                {
-                                    Console.WriteLine($"Slave found the password /* password from dictionary */");
-                                    Stop();
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Slave didn't crack the password");
-                                }
-                            }
+                            Console.WriteLine($"Slave found the password /* password from dictionary */");
+                            return true;
                         }
                         else
                         {
-                            // Just continue..
+                            Console.WriteLine("Slave didn't crack the password");
+                            Work("new task");
                         }
                     }
-                    else
-                    {
-                        // do something
-                    }
+                }
+                else
+                {
+                    return false;
                 }
             }
+            else
+            {
+                return false;
+            }
+            return false;
         }
 
         public void Stop()
