@@ -15,6 +15,7 @@ namespace PasswordCrackerMaster
     class Program
     {
         private static int _port = 6789;
+        private static int threadNum = 1;
         private static IPAddress _ip = IPAddress.Parse("127.0.0.1");
         private static Dictionary<string, string> _passwords = new Dictionary<string, string>
         {
@@ -40,9 +41,6 @@ namespace PasswordCrackerMaster
             Console.WriteLine("| /                                                                      \\ |");
             Console.WriteLine("+--------------------------------------------------------------------------+");
             Console.ResetColor();
-
-            Console.WriteLine("\n How many threads are needed? ");
-            var threadNum = Convert.ToInt32(Console.ReadLine());
 
             foreach (var item in _passwords)
             {

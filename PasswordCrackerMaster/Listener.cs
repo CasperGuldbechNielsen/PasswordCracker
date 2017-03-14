@@ -17,7 +17,6 @@ namespace PasswordCrackerMaster
         private string _jsonMessage;
         private string _jsonSendList;
         private string _threadName;
-        private string[] _slaveInfo;
         private string[] _slaveNameArr;
         private string[] _responseArr;
         private string[] slaveInfo;
@@ -46,10 +45,10 @@ namespace PasswordCrackerMaster
 
         public void Listen(TcpListener socket)
         {
+            AwaitSlaveConn(socket);
+
             while (true)
             {
-                AwaitSlaveConn(socket);
-
                 SlaveContact();
 
                 Work("first task");
@@ -157,8 +156,8 @@ namespace PasswordCrackerMaster
 
                 string[] responseArr = _jsonMessage.ToString().Split(',');
 
-                string[] slaveNameArr = _slaveInfo[0].Split(':');
-                string[] slaveResponseArr = _slaveInfo[1].Split(':');
+                string[] slaveNameArr = responseArr[0].Split(':');
+                string[] slaveResponseArr = responseArr[1].Split(':');
 
                 Console.WriteLine($"Slave: {slaveNameArr[1]} responded: {slaveResponseArr}");
 

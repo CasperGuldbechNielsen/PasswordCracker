@@ -18,7 +18,6 @@ namespace PasswordCrackerSlave
     {
         private static readonly IPAddress _masterIp = IPAddress.Parse("127.0.0.1");
         private static readonly int _masterPort = 6789;
-        private static IPAddress _slaveIp;
         private static string _machineName = Environment.MachineName;
         private static string _stopMessage;
         private static TcpClient slaveClient;
@@ -46,7 +45,7 @@ namespace PasswordCrackerSlave
 
             try
             {
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     try
                     {
@@ -56,7 +55,7 @@ namespace PasswordCrackerSlave
                     {
                         _closing = true;
                         Console.WriteLine("No connection established");
-                        Thread.Sleep(10000);
+                        Thread.Sleep(100);
                     }
 
                 }
@@ -76,7 +75,7 @@ namespace PasswordCrackerSlave
                 }
                 else
                 {
-                    //´do nothing
+                    //do nothing
                 }
                 
             }
@@ -93,7 +92,7 @@ namespace PasswordCrackerSlave
             build.Append(_machineName);
             build.Append(",");
             build.Append("Ip:");
-            build.Append(_slaveIp);
+            //build.Append(_slaveIp);
             // "Name:_machineName,Ip:_slaveIp"
 
             // serialize
