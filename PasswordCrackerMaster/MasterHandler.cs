@@ -23,7 +23,7 @@ namespace PasswordCrackerMaster
             var listLenght = slaveListToSend.Count();
 
             listLenght = listLenght - lastLen;
-
+            
             Console.WriteLine($"Sending {listLenght} lines to slave");
 
             lastLen = listLenght;
