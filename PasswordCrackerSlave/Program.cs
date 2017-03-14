@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace PasswordCrackerSlave
 {
@@ -23,6 +24,8 @@ namespace PasswordCrackerSlave
         private static TcpClient slaveClient;
         private static bool _closing;
         //private static Dictionary<string,List<string>> Dict;
+        private static JArray obj1;
+        private static JObject obj2;
 
         //this is a real dictionary put in a list
         private static List<object> list;
@@ -102,33 +105,43 @@ namespace PasswordCrackerSlave
                 break;
             }
             
-            //Recieve Workload from master
-            while (true)
+            // Read work order from master
+            var msg = streamReader.ReadLine();
+            if (msg == null)
             {
-                list = JsonConvert.DeserializeObject<List<object>>(streamReader.ReadLine());
-                break;
-                //Dict = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(streamReader.ReadLine());
-                //break;
+                // do nothing
             }
-
-            //TODO: Start Dictionary Attack on 
-
-
-            foreach (var item in list)
+            else
+            {
+                // Deserialize json message
+                JArray newMsg = (JArray)JsonConvert.DeserializeObject(msg);
+                try
                 {
-                if (item.GetType() == typeof(List<string>))
+                    var obj = newMsg.ToObject<List<object>>();
+                    try
                     {
-                    //do stuff with list
-                    ListWork(item);
+                        obj1 = (JArray)obj[0];
+                        obj2 = (JObject)obj[1];
                     }
-                else if (item.GetType() == typeof(Dictionary<string, byte[]>))
+                    catch (Exception e)
                     {
-                    //do stuff with dictionary
-                    DictWork();
+                        Console.WriteLine(e.Message);
                     }
+
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+            List<string> WordList = obj1.ToObject<List<string>>(); //List of words from the dictionary-file
+            Dictionary<string, byte[]> UserList = obj2.ToObject<Dictionary<string, byte[]>>(); //dictionary usernames and passwords(in byteform)
 
-
+            //Dictionary attack
+            foreach (var item in WordList)
+            {
+                
+            }
 
             #region AttemptNr1
 
