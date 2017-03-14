@@ -20,7 +20,7 @@ namespace PasswordCrackerSlave
         private static readonly int _masterPort = 6789;
         private static string _machineName = Environment.MachineName;
         private static string _stopMessage;
-        private static TcpClient slaveClient;
+        private static Socket slaveClient;
         private static bool _closing;
         private static string _msg;
         //private static Dictionary<string,List<string>> Dict;
@@ -31,6 +31,8 @@ namespace PasswordCrackerSlave
         //this is a real dictionary put in a list
         private static List<object> list;
         private static HashAlgorithm _hashAlgorithm;
+
+        private static byte[] bits = new byte[1024];
        
         static void Main(string[] args)
         {
@@ -50,7 +52,16 @@ namespace PasswordCrackerSlave
                 {
                     try
                     {
-                        slaveClient = new TcpClient(_masterIp.ToString(), _masterPort);
+                        slaveClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                        IPEndPoint end = new IPEndPoint(_masterIp, _masterPort);
+
+                        while (true)
+                        {
+                            if (slaveClient.Connected)
+                                break;
+                            slaveClient.Connect(end);
+                        }
+                        //slaveClient = new TcpClient(_masterIp.ToString(), _masterPort);
                     }
                     catch (Exception)
                     {
@@ -81,10 +92,6 @@ namespace PasswordCrackerSlave
                 
             }
 
-            NetworkStream stream = slaveClient.GetStream();
-            StreamReader streamReader = new StreamReader(stream);
-            StreamWriter streamWriter = new StreamWriter(stream) { AutoFlush = true };
-
             // JSON encode SlaveIp & MachineName
 
             StringBuilder build = new StringBuilder();
@@ -100,15 +107,14 @@ namespace PasswordCrackerSlave
             var json = JsonConvert.SerializeObject(build);
 
             // Phone home with MachineName & SlaveIp
-            streamWriter.WriteLine(json); //send MachineName
+            byte[] send = Encoding.ASCII.GetBytes(json);
+            slaveClient.Send(send);
     
             while (true)
             {
-                if (stream.DataAvailable)
-                {
-                    // Read work order from master
-                    _msg = streamReader.ReadLine();
-                }
+                // Read work order from master
+                var msg = slaveClient.Receive(bits);
+                _msg = Encoding.ASCII.GetString(bits,0,msg);
             }
             
             if (_msg == null)

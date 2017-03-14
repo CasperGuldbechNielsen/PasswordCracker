@@ -20,10 +20,10 @@ namespace PasswordCrackerMaster
         private List<string> _slaveList;
         private List<string> _slaveListToSend;
 
-        private TcpListener _serverSocket;
+        private Socket _serverSocket;
         private Listener _listen;
 
-        public TCPServer(IPAddress ip, int port)
+        public TCPServer()
         {
             _slaveList = new List<string>();
             _slaveListToSend = new List<string>();
@@ -46,18 +46,17 @@ namespace PasswordCrackerMaster
                 _slaveList.Add(Convert.ToString(item));
             }
 
-            _serverSocket = new TcpListener(ip, port);
-            _serverSocket.Start();
+            _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public TcpListener ServerSocket
+        public Socket ServerSocket
         {
             get { return _serverSocket; }
         }
 
-        public void StartThreading(TcpListener socket, string threadName, Dictionary<string, byte[]> password)
+        public void StartThreading(IPAddress ip, int port, Socket socket, string threadName, Dictionary<string, byte[]> password)
         {
-            _listen = new Listener(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, threadName, password);
+            _listen = new Listener(ip, port, _rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, threadName, password);
             _listen.Listen(socket);
         }
     }

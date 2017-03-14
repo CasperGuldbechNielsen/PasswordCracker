@@ -49,13 +49,13 @@ namespace PasswordCrackerMaster
             }
 
 
-            server = new TCPServer(_ip, _port);
+            server = new TCPServer();
 
             var socket = server.ServerSocket;
 
             for (int i = 0; i < threadNum; i++)
             {
-                Thread thread = new Thread(() => server.StartThreading(socket, $"Thread {i}", _passwordsDecoded));
+                Thread thread = new Thread(() => server.StartThreading(_ip, _port, socket, $"Thread {i}", _passwordsDecoded));
                 thread.Start();
             }
         }

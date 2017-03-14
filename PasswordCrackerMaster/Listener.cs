@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace PasswordCrackerMaster
     {
         private int _rowsSent;
         private int _listNumsToSend;
+        private int _port;
         private string _message;
         private string _jsonMessage;
         private string _jsonSendList;
@@ -20,19 +22,22 @@ namespace PasswordCrackerMaster
         private string[] _slaveNameArr;
         private string[] _responseArr;
         private string[] slaveInfo;
+        byte[] bits = new byte[1024];
         private bool goOn = false;
         private Dictionary<string, byte[]> _password;
         private List<string> _slaveListToSend;
         private List<string> _slaveList;
+        private IPAddress _ip;
 
-        NetworkStream stream;
-        StreamReader streamReader;
-        StreamWriter streamWriter;
+        Socket serverClient;
+        Socket socket;
 
         private MasterHandler _handler;
 
-        public Listener(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, string threadName, Dictionary<string, byte[]> password)
+        public Listener(IPAddress ip, int port, int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, string threadName, Dictionary<string, byte[]> password)
         {
+            _ip = ip;
+            _port = port;
             _rowsSent = rowsSent;
             _listNumsToSend = listNumsToSend;
             _slaveListToSend = slaveListToSend;
@@ -43,9 +48,11 @@ namespace PasswordCrackerMaster
             _handler = new MasterHandler();
         }
 
-        public void Listen(TcpListener socket)
+        public void Listen(Socket socket)
         {
-            AwaitSlaveConn(socket);
+            serverClient = socket;
+
+            AwaitSlaveConn();
 
             while (true)
             {
@@ -81,10 +88,12 @@ namespace PasswordCrackerMaster
             _jsonSendList = _handler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
 
             // Send data
-            streamWriter.Write(_jsonSendList);
+            byte[] send = Encoding.ASCII.GetBytes(_jsonSendList);
+            socket.Send(send);
 
             // Wait for slave to respond
-            var slaveResponse = streamReader.ReadLine();
+            var msg = socket.Receive(bits);
+            var slaveResponse = Encoding.ASCII.GetString(bits, 0, msg);
 
             if (!string.IsNullOrEmpty(slaveResponse))
             {
@@ -107,18 +116,10 @@ namespace PasswordCrackerMaster
 
         public void SlaveContact()
         {
-            using(StreamReader streamReader = new StreamReader(stream))
-            {
-                while(!streamReader.EndOfStream)
-                {
-                    if (stream.DataAvailable)
-                    {
-                        // Read input
-                        _message = streamReader.ReadLine();
-                    }
-                }
-            }
-
+            // Read input
+            var msg = socket.Receive(bits);
+            _message = Encoding.ASCII.GetString(bits, 0, msg);
+        
             // Do stuff with the message
             if (!string.IsNullOrEmpty(_message))
             {
@@ -140,23 +141,35 @@ namespace PasswordCrackerMaster
             }
         }
 
-        public void AwaitSlaveConn(TcpListener socket)
+        public void AwaitSlaveConn()
         {
             Console.WriteLine($"{_threadName}: Waiting for a slave to connect");
 
-            TcpClient serverClient = socket.AcceptTcpClient();
+            IPEndPoint localEP = new IPEndPoint(_ip, _port);
+
+            serverClient.Bind(localEP);
+            serverClient.Listen(10);
+
+            while(true)
+            {
+                socket = serverClient.Accept();
+                if (socket.Connected)
+                    break;
+            }
+
+            Console.WriteLine("Client connected");
 
             // Setup streams
-
-            stream = serverClient.GetStream();
-            streamReader = new StreamReader(stream);
-            streamWriter = new StreamWriter(stream) { AutoFlush = true };
+            //stream = new NetworkStream(socket);
+            //streamReader = new StreamReader(stream);
+            //streamWriter = new StreamWriter(stream) { AutoFlush = true };
         }
 
         public bool EvaluateSlaveResponse()
         {
             // Wait for slave to finish
-            var slaveNewResponse = streamReader.ReadLine();
+            var msg = socket.Receive(bits);
+            var slaveNewResponse = Encoding.ASCII.GetString(bits, 0, msg);
 
             if (!string.IsNullOrEmpty(slaveNewResponse))
             {
