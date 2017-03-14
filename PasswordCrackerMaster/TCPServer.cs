@@ -31,8 +31,8 @@ namespace PasswordCrackerMaster
             // Initiate server
             Console.WriteLine("Initiating server...");
 
-            Console.WriteLine("Dividing dictionary in 100 equally sized pieces..");
             _dictDivide = 1000;
+            Console.WriteLine($"Dividing dictionary in {_dictDivide} equally sized pieces..");
 
             foreach (var item in Resource.webster_dictionary_reduced)
             {
