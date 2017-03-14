@@ -103,11 +103,18 @@ namespace PasswordCrackerMaster
                 _jsonMessage = Convert.ToString(JsonConvert.DeserializeObject(_message));
 
                 slaveInfo = _jsonMessage.ToString().Split(',');
-                string[] slaveName = slaveInfo[0].Split(':');
-                string[] slaveIp = slaveInfo[1].Split(':');
+                string[] slaveMaxCap = slaveInfo[0].Split(':');
+                string[] slaveCap = slaveInfo[1].Split(':');
+                string[] slaveName = slaveInfo[2].Split(':');
+                string[] slaveIp = slaveInfo[3].Split(':');
+
+                string[] resultIP = slaveIp[1].Split('.');
+                string[] finalIP = resultIP[3].Split('\"');
+
+                string IP = resultIP[0] + "." + resultIP[1] + "." + resultIP[2] + "." + finalIP[0];
 
                 // Get slave IP and such..
-                Console.WriteLine($"Slave connected with name {slaveName[1]} nd IP {slaveIp[1]}.");
+                Console.WriteLine($"Slave connected with information: \nName: {slaveName[2]} \nIP: {IP} \nMax_Capacity: {slaveMaxCap[1]} \nCapacity: {slaveCap[1]}\n");
             }
             else
             {
