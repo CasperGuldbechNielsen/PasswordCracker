@@ -137,6 +137,7 @@ namespace PasswordCrackerSlave
                     }
                     //TODO: Add to ResultDictionary
                 }
+                Console.WriteLine("Testing hashes against passwords...");
                 foreach (var password in userList.Values)
                 {
                     foreach (var item in possibleVariant)
@@ -150,11 +151,14 @@ namespace PasswordCrackerSlave
                                 if (Equals(match, Convert.ToBase64String(password)))
                                 {
                                     result.Add(Convert.ToBase64String(password), item);
+                                    Console.WriteLine("Found match!");
                                 }
                             }
                         }
                     }
                 }
+                if(result.Count == 0)
+                    Console.WriteLine("No match found.");
                 var jsonsend = JsonConvert.SerializeObject(result);
 
                 // Phone home with MachineName & SlaveIp
