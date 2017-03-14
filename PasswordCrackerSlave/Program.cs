@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace PasswordCrackerSlave
 {
@@ -21,10 +23,18 @@ namespace PasswordCrackerSlave
         private static string _stopMessage;
         private static TcpClient slaveClient;
         private static bool _closing;
-        private static List<string> recievedData;
+        //private static Dictionary<string,List<string>> Dict;
+        private static JArray obj1;
+        private static JObject obj2;
+        private static readonly Converter<char, byte> Converter = CharToByte;
 
+        //this is a real dictionary put in a list
+        private static List<object> list;
+        private static HashAlgorithm _hashAlgorithm;
+       
         static void Main(string[] args)
         {
+           
             // startup
             Console.WriteLine("Slave Node started");
 
@@ -96,19 +106,83 @@ namespace PasswordCrackerSlave
                 break;
             }
             
-            //Recieve Workload from master
-            while (true)
+            // Read work order from master
+            var msg = streamReader.ReadLine();
+            if (msg == null)
             {
-                //
-                List<string> deserializedData = JsonConvert.DeserializeObject<List<string>>(streamReader.ReadLine());
-                recievedData.AddRange(deserializedData); 
-                break;
+                // do nothing
             }
-            
-            //TODO: Start Dictionary Attack on workload
+            else
+            {
+                // Deserialize json message
+                JArray newMsg = (JArray)JsonConvert.DeserializeObject(msg);
+                try
+                {
+                    var obj = newMsg.ToObject<List<object>>();
+                    try
+                    {
+                        obj1 = (JArray)obj[0];
+                        obj2 = (JObject)obj[1];
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+
+            List<string> wordList = obj1.ToObject<List<string>>(); //List of words from the dictionary-file
+            Dictionary<string, byte[]> userList = obj2.ToObject<Dictionary<string, byte[]>>(); //dictionary usernames and passwords(in byteform)
+
+            //Dictionary attack
+            Dictionary<string, string> resultsDictionary = new Dictionary<string, string>();
+
+            foreach (var word in wordList)
+            {
+                List<byte[]> possibleVariant = new List<byte[]>();
+
+                
+                string oWord = word;
+                
+                //Variants & Mutations
+                possibleVariant.Add(RunHash(oWord));
+                possibleVariant.Add(RunHash(WordVariant.Capitalize(oWord)));
+                possibleVariant.Add(RunHash(WordVariant.Lowercase(oWord)));
+                possibleVariant.Add(RunHash(WordVariant.Reverse(oWord)));
+                possibleVariant.Add(RunHash(WordVariant.Uppercase(oWord)));
+                for (int i = 0; i < 100; i++)
+                {
+                    possibleVariant.Add(RunHash(oWord+i));
+                }
+                for (int i = 0; i < 100; i++)
+                {
+                    possibleVariant.Add(RunHash(i+oWord));
+                }
+                for (int i = 0; i < 100; i++)
+                {
+                    for (int j = 0; j < 100; j++)
+                    {
+                        possibleVariant.Add(RunHash(i+word+j));
+                    }
+                }
 
 
-            //TODO: Send result back to Master in a dictionary <1,"passPlain">/<0,"">
+                foreach (var password in userList.Values)
+                {
+                    
+                }
+                //TODO: Add to ResultDictionary
+                
+                
+            }
+
+
+            //TODO: Send ResultDictionary back to Master 
 
             #region Stop functionality
             // Temporary stop functionality on slave end
@@ -124,6 +198,25 @@ namespace PasswordCrackerSlave
             #endregion
         }
 
+
+        public static bool CompareHashes(byte[] pwdHash, byte[] compareHash)
+        {
+            var pwdLenght = pwdHash.Length;
+            var compareLenght = compareHash.Length;
+
+            if (pwdLenght != compareLenght)
+                return false;
+
+            bool match = false;
+
+            for (int i = 0; i < pwdLenght; i++)
+            {
+                match = Equals(pwdHash[i], compareHash[i]);
+            }
+
+            return match;
+        }
+
         public static string GetLocalIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -137,5 +230,24 @@ namespace PasswordCrackerSlave
             }
             return "no Ip found";
         }
+        // take in the string dictionary item , hash it and return it as a byte
+        public static byte[] RunHash(string wordToHash)
+        {
+            _hashAlgorithm = new SHA1CryptoServiceProvider();
+            char[] wordAsChar = wordToHash.ToCharArray();
+            byte[] wordAsBytes = Array.ConvertAll(wordAsChar, DoConversion());
+            byte[] encryptedWord = _hashAlgorithm.ComputeHash(wordAsBytes);
+
+            return encryptedWord;
+        }
+        public static Converter<char, byte> DoConversion()
+        {
+            return Converter;
+        }
+        private static byte CharToByte(char ch)
+        {
+            return Convert.ToByte(ch);
+        }
+
     }
 }
