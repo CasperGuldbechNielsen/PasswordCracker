@@ -14,7 +14,7 @@ namespace PasswordCrackerMaster
 
         public string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, Dictionary<string, byte[]> password)
         {
-            for (int i = (rowsSent + 1); rowsSent < listNumsToSend; i++)
+            for (int i = (rowsSent + 1); i <= listNumsToSend; i++)
             {
                 slaveListToSend.Add(slaveList[i]);
             }

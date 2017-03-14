@@ -41,7 +41,9 @@ namespace PasswordCrackerMaster
 
             _listNumsToSend = _divideNum / _dictDivide;
 
-            foreach (var item in Resource.webster_dictionary_reduced)
+            string[] dict = Resource.webster_dictionary_reduced.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+            foreach (string item in dict)
             {
                 _slaveList.Add(Convert.ToString(item));
             }

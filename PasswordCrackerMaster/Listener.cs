@@ -150,14 +150,10 @@ namespace PasswordCrackerMaster
             serverClient.Bind(localEP);
             serverClient.Listen(10);
 
-            while(true)
-            {
-                socket = serverClient.Accept();
-                if (socket.Connected)
-                    break;
-            }
 
-            Console.WriteLine("Client connected");
+            socket = serverClient.Accept();
+            if (socket.Connected)
+                Console.WriteLine("Client connected");
 
             // Setup streams
             //stream = new NetworkStream(socket);

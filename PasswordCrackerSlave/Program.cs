@@ -45,52 +45,9 @@ namespace PasswordCrackerSlave
             Console.WriteLine("Current IP Address is: " + GetLocalIP());
 
             // establish TCP connection to master
-
-            try
-            {
-                for (int i = 0; i < 100; i++)
-                {
-                    try
-                    {
-                        slaveClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                        IPEndPoint end = new IPEndPoint(_masterIp, _masterPort);
-
-                        while (true)
-                        {
-                            if (slaveClient.Connected)
-                                break;
-                            slaveClient.Connect(end);
-                        }
-                        //slaveClient = new TcpClient(_masterIp.ToString(), _masterPort);
-                    }
-                    catch (Exception)
-                    {
-                        _closing = true;
-                        Console.WriteLine("No connection established");
-                        Thread.Sleep(100);
-                    }
-
-                }
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("fubar");
-
-            }
-            finally
-            {
-                if (_closing)
-                {
-                    Console.WriteLine("Closing down in 5 seconds");
-                    Thread.Sleep(5000);
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    //do nothing
-                }
-                
-            }
+            slaveClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            IPEndPoint end = new IPEndPoint(_masterIp, _masterPort);
+            slaveClient.Connect(end);
 
             // JSON encode SlaveIp & MachineName
 
