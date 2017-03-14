@@ -107,8 +107,17 @@ namespace PasswordCrackerMaster
 
         public void SlaveContact()
         {
-            // Read input
-            _message = streamReader.ReadLine();
+            using(StreamReader streamReader = new StreamReader(stream))
+            {
+                while(!streamReader.EndOfStream)
+                {
+                    if (stream.DataAvailable)
+                    {
+                        // Read input
+                        _message = streamReader.ReadLine();
+                    }
+                }
+            }
 
             // Do stuff with the message
             if (!string.IsNullOrEmpty(_message))

@@ -22,6 +22,7 @@ namespace PasswordCrackerSlave
         private static string _stopMessage;
         private static TcpClient slaveClient;
         private static bool _closing;
+        private static string _msg;
         //private static Dictionary<string,List<string>> Dict;
         private static JArray obj1;
         private static JObject obj2;
@@ -92,29 +93,32 @@ namespace PasswordCrackerSlave
             build.Append(_machineName);
             build.Append(",");
             build.Append("Ip:");
-            //build.Append(_slaveIp);
+            build.Append(GetLocalIP());
             // "Name:_machineName,Ip:_slaveIp"
 
             // serialize
             var json = JsonConvert.SerializeObject(build);
 
             // Phone home with MachineName & SlaveIp
+            streamWriter.WriteLine(json); //send MachineName
+    
             while (true)
             {
-                streamWriter.WriteLine(json); //send MachineName
-                break;
+                if (stream.DataAvailable)
+                {
+                    // Read work order from master
+                    _msg = streamReader.ReadLine();
+                }
             }
             
-            // Read work order from master
-            var msg = streamReader.ReadLine();
-            if (msg == null)
+            if (_msg == null)
             {
                 // do nothing
             }
             else
             {
                 // Deserialize json message
-                JArray newMsg = (JArray)JsonConvert.DeserializeObject(msg);
+                JArray newMsg = (JArray)JsonConvert.DeserializeObject(_msg);
                 try
                 {
                     var obj = newMsg.ToObject<List<object>>();
