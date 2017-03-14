@@ -26,6 +26,7 @@ namespace PasswordCrackerSlave
         //private static Dictionary<string,List<string>> Dict;
         private static JArray obj1;
         private static JObject obj2;
+        private static readonly Converter<char, byte> Converter = CharToByte;
 
         //this is a real dictionary put in a list
         private static List<object> list;
@@ -134,37 +135,54 @@ namespace PasswordCrackerSlave
                     Console.WriteLine(e.Message);
                 }
             }
-            List<string> WordList = obj1.ToObject<List<string>>(); //List of words from the dictionary-file
-            Dictionary<string, byte[]> UserList = obj2.ToObject<Dictionary<string, byte[]>>(); //dictionary usernames and passwords(in byteform)
+
+            List<string> wordList = obj1.ToObject<List<string>>(); //List of words from the dictionary-file
+            Dictionary<string, byte[]> userList = obj2.ToObject<Dictionary<string, byte[]>>(); //dictionary usernames and passwords(in byteform)
 
             //Dictionary attack
-            foreach (var item in WordList)
+            Dictionary<string, string> resultsDictionary = new Dictionary<string, string>();
+
+            foreach (var word in wordList)
             {
+                List<byte[]> possibleVariant = new List<byte[]>();
+
+                
+                string oWord = word;
+                
+                //Variants & Mutations
+                possibleVariant.Add(RunHash(oWord));
+                possibleVariant.Add(RunHash(WordVariant.Capitalize(oWord)));
+                possibleVariant.Add(RunHash(WordVariant.Lowercase(oWord)));
+                possibleVariant.Add(RunHash(WordVariant.Reverse(oWord)));
+                possibleVariant.Add(RunHash(WordVariant.Uppercase(oWord)));
+                for (int i = 0; i < 100; i++)
+                {
+                    possibleVariant.Add(RunHash(oWord+i));
+                }
+                for (int i = 0; i < 100; i++)
+                {
+                    possibleVariant.Add(RunHash(i+oWord));
+                }
+                for (int i = 0; i < 100; i++)
+                {
+                    for (int j = 0; j < 100; j++)
+                    {
+                        possibleVariant.Add(RunHash(i+word+j));
+                    }
+                }
+
+
+                foreach (var password in userList.Values)
+                {
+                    
+                }
+                //TODO: Add to ResultDictionary
+                
                 
             }
 
-            #region AttemptNr1
 
-            //string match = "";
-
-            //foreach (var item in Dict)
-            //{
-            //    foreach (var dictValue in Dict.Values)
-            //    {
-            //        match = dictValue.ToString();
-            //        var hasheditem = _hashAlgorithm.ComputeHash(Encoding.ASCII.GetBytes(dictValue.ToString()));
-            //        if (CompareHashes(Encoding.ASCII.GetBytes(item.Key), hasheditem))
-            //            break;
-            //        }
-
-            //    if (CompareHashes(Encoding.ASCII.GetBytes(item.Key), _hashAlgorithm.ComputeHash(Encoding.ASCII.GetBytes(match))))
-
-            //    // success!!!
-            //}
-            #endregion
-
-
-            //TODO: Send result back to Master in a dictionary <1,"passPlain">/<0,"">
+            //TODO: Send ResultDictionary back to Master 
 
             #region Stop functionality
             // Temporary stop functionality on slave end
@@ -180,18 +198,9 @@ namespace PasswordCrackerSlave
             #endregion
         }
 
-        public static void ListWork(object item)
-            {
-            
-                
-            }
 
-        public static void DictWork()
-        {
-            
-        }
         public static bool CompareHashes(byte[] pwdHash, byte[] compareHash)
-            {
+        {
             var pwdLenght = pwdHash.Length;
             var compareLenght = compareHash.Length;
 
@@ -206,7 +215,7 @@ namespace PasswordCrackerSlave
             }
 
             return match;
-            }
+        }
 
         public static string GetLocalIP()
         {
@@ -222,23 +231,23 @@ namespace PasswordCrackerSlave
             return "no Ip found";
         }
         // take in the string dictionary item , hash it and return it as a byte
-        //public static byte[] RunHash(string wordToHash)
-        //{
-        //    _hashAlgorithm = new SHA1CryptoServiceProvider();
-        //    char[] wordAsChar = wordToHash.ToCharArray();
-        //    byte[] wordAsBytes = Array.ConvertAll(wordAsChar, DoConversion());
-        //    byte[] encryptedPassword = _hashAlgorithm.ComputeHash(wordAsBytes);
+        public static byte[] RunHash(string wordToHash)
+        {
+            _hashAlgorithm = new SHA1CryptoServiceProvider();
+            char[] wordAsChar = wordToHash.ToCharArray();
+            byte[] wordAsBytes = Array.ConvertAll(wordAsChar, DoConversion());
+            byte[] encryptedWord = _hashAlgorithm.ComputeHash(wordAsBytes);
 
-        //    return encryptedPassword;
-        //}
-        //private static Converter<char, byte> DoConversion()
-        //    {
-        //    return Converter;
-        //    }
-        //private static byte CharToByte(char ch)
-        //    {
-        //    return Convert.ToByte(ch);
-        //    }
-
+            return encryptedWord;
         }
+        public static Converter<char, byte> DoConversion()
+        {
+            return Converter;
+        }
+        private static byte CharToByte(char ch)
+        {
+            return Convert.ToByte(ch);
+        }
+
+    }
 }
