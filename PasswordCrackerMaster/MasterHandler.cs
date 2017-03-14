@@ -11,19 +11,23 @@ namespace PasswordCrackerMaster
     class MasterHandler
     {
         private string _jsonSendList;
+        private int lastLen = 0;
 
         public string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, Dictionary<string, byte[]> password)
         {
-            for (int i = (rowsSent + 1); i <= listNumsToSend; i++)
+            for (int i = (rowsSent + 1); i < listNumsToSend; i++)
             {
                 slaveListToSend.Add(slaveList[i]);
             }
 
             var listLenght = slaveListToSend.Count();
 
+            listLenght = listLenght - lastLen;
+
             Console.WriteLine($"Sending {listLenght} lines to slave");
 
-            // TODO: Also send password
+            lastLen = listLenght;
+
             List<object> objectList = new List<object>()
             {
                 { password },

@@ -32,7 +32,7 @@ namespace PasswordCrackerMaster
             Console.WriteLine("Initiating server...");
 
             Console.WriteLine("Dividing dictionary in 100 equally sized pieces..");
-            _dictDivide = 100;
+            _dictDivide = 1000;
 
             foreach (var item in Resource.webster_dictionary_reduced)
             {

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,12 +23,13 @@ namespace PasswordCrackerMaster
         private string[] _slaveNameArr;
         private string[] _responseArr;
         private string[] slaveInfo;
-        byte[] bits = new byte[1024];
+        byte[] bits = new byte[10240];
         private bool goOn = false;
         private Dictionary<string, byte[]> _password;
         private List<string> _slaveListToSend;
         private List<string> _slaveList;
         private IPAddress _ip;
+        JObject obj1;
 
         Socket serverClient;
         Socket socket;
@@ -66,7 +68,7 @@ namespace PasswordCrackerMaster
         {
             SendWork(workType);
 
-            while (goOn)
+            while (true)
             {
                 try
                 {
@@ -90,28 +92,6 @@ namespace PasswordCrackerMaster
             // Send data
             byte[] send = Encoding.ASCII.GetBytes(_jsonSendList);
             socket.Send(send);
-
-            // Wait for slave to respond
-            var msg = socket.Receive(bits);
-            var slaveResponse = Encoding.ASCII.GetString(bits, 0, msg);
-
-            if (!string.IsNullOrEmpty(slaveResponse))
-            {
-                // Deserialize the message
-                var response = Convert.ToString(JsonConvert.DeserializeObject(slaveResponse));
-
-                _responseArr = _jsonMessage.ToString().Split(',');
-                _slaveNameArr = slaveInfo[0].Split(':');
-                _responseArr = slaveInfo[1].Split(':');
-
-                Console.WriteLine($"Slave: {_slaveNameArr[1]} responded: {_responseArr}");
-            }
-            else
-            {
-                // do something
-                Console.WriteLine("Something went wrong. Closing thread.");
-                Stop();
-            }
         }
 
         public void SlaveContact()
@@ -172,49 +152,22 @@ namespace PasswordCrackerMaster
                 // Deserialize the message
                 var response = Convert.ToString(JsonConvert.DeserializeObject(slaveNewResponse));
 
-                string[] responseArr = _jsonMessage.ToString().Split(',');
+                JObject newMsg = (JObject)JsonConvert.DeserializeObject(response);
 
-                string[] slaveNameArr = responseArr[0].Split(':');
-                string[] slaveResponseArr = responseArr[1].Split(':');
-
-                Console.WriteLine($"Slave: {slaveNameArr[1]} responded: {slaveResponseArr}");
-
-                if (slaveResponseArr[1] == "Done")
+                if (newMsg.Count == 0)
                 {
-                    Console.WriteLine($"Slave: {slaveNameArr[1]} is done with his work");
-
-                    /*
-                     * 
-                     * We need to evaluate slave response here. Get the result back and so on. 
-                     * Digest response and handle a failed crack attempt with a new send work.
-                     * 
-                     * 
-                     */
-
-                    if (false /* Some dictionary recieved <key (integer), value (string:plain_text_pass)*/)
-                    {
-                        if (true /* Some dictionary.key == 1 */)
-                        {
-                            Console.WriteLine($"Slave found the password /* password from dictionary */");
-                            return true;
-                        }
-                        else
-                        {
-                            Console.WriteLine("Slave didn't crack the password");
-                            Work("new task");
-                        }
-                    }
+                    Work("new task");
                 }
+               
                 else
                 {
-                    return false;
+                    foreach (var item in obj1)
+                    {
+                        Console.WriteLine($"Slave returned: {item.Key} + {item.Value}");
+                    }
                 }
             }
-            else
-            {
-                return false;
-            }
-            return false;
+            return true;
         }
 
         public void Stop()
