@@ -8,12 +8,11 @@ using System.Threading.Tasks;
 
 namespace PasswordCrackerMaster
 {
-    class MasterHandler
+    static class MasterHandler
     {
-        private string _jsonSendList;
-        private int lastLen = 0;
+        private static int lastLen = 0;
 
-        public string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, Dictionary<string, byte[]> password)
+        public static string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, Dictionary<string, byte[]> password)
         {
             for (int i = (rowsSent + 1); i < listNumsToSend; i++)
             {
@@ -22,9 +21,9 @@ namespace PasswordCrackerMaster
 
             var listLenght = slaveListToSend.Count();
 
-            listLenght = listLenght - lastLen;
+            var result = listLenght - lastLen;
             
-            Console.WriteLine($"Sending {listLenght} lines to slave");
+            Console.WriteLine($"Sending {result} lines to slave");
 
             lastLen = listLenght;
 
@@ -34,7 +33,7 @@ namespace PasswordCrackerMaster
                 { slaveListToSend }
             };
 
-            return _jsonSendList = JsonConvert.SerializeObject(objectList);
+            return JsonConvert.SerializeObject(objectList);
         }
     }
 }

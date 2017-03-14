@@ -34,8 +34,6 @@ namespace PasswordCrackerMaster
         Socket serverClient;
         Socket socket;
 
-        private MasterHandler _handler;
-
         public Listener(IPAddress ip, int port, int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, string threadName, Dictionary<string, byte[]> password)
         {
             _ip = ip;
@@ -46,8 +44,6 @@ namespace PasswordCrackerMaster
             _slaveList = slaveList;
             _threadName = threadName;
             _password = password;
-
-            _handler = new MasterHandler();
         }
 
         public void Listen(Socket socket)
@@ -87,7 +83,7 @@ namespace PasswordCrackerMaster
         {
             Console.WriteLine($"Sending {workType} to slave...");
 
-            _jsonSendList = _handler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
+            _jsonSendList = MasterHandler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
 
             // Send data
             byte[] send = Encoding.ASCII.GetBytes(_jsonSendList);
