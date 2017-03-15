@@ -7,40 +7,30 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PasswordCrackerMaster
 {
     class Listener
     {
-        private int _rowsSent;
-        private int _listNumsToSend;
         private int _port;
         private string _message;
         private string _jsonMessage;
         private string _jsonSendList;
         private string _threadName;
-        private string[] _slaveNameArr;
-        private string[] _responseArr;
+        private string _slaveName;
         private string[] slaveInfo;
         byte[] bits = new byte[10240];
         private bool goOn = false;
         private Dictionary<string, byte[]> _password;
-        private List<string> _slaveListToSend;
         private List<string> _slaveList;
         private IPAddress _ip;
-        JObject obj1;
 
-        Socket serverClient;
-        Socket socket;
-
-        public Listener(IPAddress ip, int port, int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, string threadName, Dictionary<string, byte[]> password)
+        public Listener(IPAddress ip, int port, List<string> slaveList, string threadName, Dictionary<string, byte[]> password)
         {
             _ip = ip;
             _port = port;
-            _rowsSent = rowsSent;
-            _listNumsToSend = listNumsToSend;
-            _slaveListToSend = slaveListToSend;
             _slaveList = slaveList;
             _threadName = threadName;
             _password = password;
@@ -48,27 +38,32 @@ namespace PasswordCrackerMaster
 
         public void Listen(Socket socket)
         {
-            serverClient = socket;
+            Socket serverClient = socket;
 
-            AwaitSlaveConn();
+            AwaitSlaveConn(serverClient);
+        }
+
+        public void HandleClients(object obj)
+        {
+            Socket socket = (Socket)obj;
 
             while (true)
             {
-                SlaveContact();
+                SlaveContact(socket);
 
-                Work("first task");
+                Work(socket);
             }
         }
 
-        public void Work(string workType)
+        public void Work(Socket socket)
         {
-            SendWork(workType);
+            SendWork(socket);
 
             while (true)
             {
                 try
                 {
-                    goOn = EvaluateSlaveResponse();
+                    goOn = EvaluateSlaveResponse(socket);
                     if (goOn)
                         Stop();
                 }
@@ -79,18 +74,16 @@ namespace PasswordCrackerMaster
             }
         }
 
-        public void SendWork(string workType)
+        public void SendWork(Socket socket)
         {
-            Console.WriteLine($"Sending {workType} to slave...");
-
-            _jsonSendList = MasterHandler.SendWork(_rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, _password);
+            _jsonSendList = MasterHandler.SendWork(_slaveList, _password, _slaveName);
 
             // Send data
             byte[] send = Encoding.ASCII.GetBytes(_jsonSendList);
             socket.Send(send);
         }
 
-        public void SlaveContact()
+        public void SlaveContact(Socket socket)
         {
             // Read input
             var msg = socket.Receive(bits);
@@ -106,6 +99,7 @@ namespace PasswordCrackerMaster
                 string[] slaveMaxCap = slaveInfo[0].Split(':');
                 string[] slaveCap = slaveInfo[1].Split(':');
                 string[] slaveName = slaveInfo[2].Split(':');
+                _slaveName = slaveName[2];
                 string[] slaveIp = slaveInfo[3].Split(':');
 
                 string[] resultIP = slaveIp[1].Split('.');
@@ -124,7 +118,7 @@ namespace PasswordCrackerMaster
             }
         }
 
-        public void AwaitSlaveConn()
+        public void AwaitSlaveConn(Socket serverClient)
         {
             Console.WriteLine($"{_threadName}: Waiting for a slave to connect");
 
@@ -133,18 +127,20 @@ namespace PasswordCrackerMaster
             serverClient.Bind(localEP);
             serverClient.Listen(10);
 
+            while (true)
+            {
+                Socket socket = serverClient.Accept();
 
-            socket = serverClient.Accept();
-            if (socket.Connected)
-                Console.WriteLine("Client connected");
-
-            // Setup streams
-            //stream = new NetworkStream(socket);
-            //streamReader = new StreamReader(stream);
-            //streamWriter = new StreamWriter(stream) { AutoFlush = true };
+                if (socket.Connected)
+                {
+                    Console.WriteLine("Client connected");
+                    Thread t = new Thread(new ParameterizedThreadStart(HandleClients));
+                    t.Start(socket);
+                }
+            }
         }
 
-        public bool EvaluateSlaveResponse()
+        public bool EvaluateSlaveResponse(Socket socket)
         {
             // Wait for slave to finish
             var msg = socket.Receive(bits);
@@ -159,14 +155,15 @@ namespace PasswordCrackerMaster
 
                 if (newMsg.Count == 0)
                 {
-                    Work("new task");
+                    Console.WriteLine($"<= Slave {_slaveName} returned: No Match..\n");
+                    Work(socket);
                 }
                
                 else
                 {
-                    foreach (var item in obj1)
+                    foreach (var item in newMsg)
                     {
-                        Console.WriteLine($"Slave returned: {item.Key} + {item.Value}");
+                        Console.WriteLine($"<= Slave {_slaveName} returned: {item.Key} + {item.Value}");
                     }
                 }
             }

@@ -15,10 +15,8 @@ namespace PasswordCrackerMaster
         private int _dictDivide;
         private int _divideNum;
         private int _listNumsToSend;
-        private int _rowsSent = -1;
 
         private List<string> _slaveList;
-        private List<string> _slaveListToSend;
 
         private Socket _serverSocket;
         private Listener _listen;
@@ -26,12 +24,11 @@ namespace PasswordCrackerMaster
         public TCPServer()
         {
             _slaveList = new List<string>();
-            _slaveListToSend = new List<string>();
 
             // Initiate server
             Console.WriteLine("Initiating server...");
 
-            _dictDivide = 1000;
+            _dictDivide = 500;
             Console.WriteLine($"Dividing dictionary in {_dictDivide} equally sized pieces..");
 
             foreach (var item in Resource.webster_dictionary_reduced)
@@ -40,6 +37,9 @@ namespace PasswordCrackerMaster
             }
 
             _listNumsToSend = _divideNum / _dictDivide;
+            MasterHandler.listNumsToSend = _listNumsToSend;
+
+            Console.WriteLine($"\nTotal amount of lines to send to slaves: {_divideNum} \nWith {_dictDivide} divisions \nAmount to {_listNumsToSend} in block size\n");
 
             string[] dict = Resource.webster_dictionary_reduced.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
 
@@ -51,15 +51,10 @@ namespace PasswordCrackerMaster
             _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public Socket ServerSocket
+        public void StartThreading(IPAddress ip, int port, string threadName, Dictionary<string, byte[]> password)
         {
-            get { return _serverSocket; }
-        }
-
-        public void StartThreading(IPAddress ip, int port, Socket socket, string threadName, Dictionary<string, byte[]> password)
-        {
-            _listen = new Listener(ip, port, _rowsSent, _listNumsToSend, _slaveListToSend, _slaveList, threadName, password);
-            _listen.Listen(socket);
+            Listener _listener = new Listener(ip, port, _slaveList, threadName, password);
+            _listener.Listen(_serverSocket);
         }
     }
 }

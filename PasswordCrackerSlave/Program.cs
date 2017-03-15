@@ -19,19 +19,12 @@ namespace PasswordCrackerSlave
         private static readonly IPAddress _masterIp = IPAddress.Parse("127.0.0.1");
         private static readonly int _masterPort = 6789;
         private static string _machineName = Environment.MachineName;
-        private static string _stopMessage;
         private static Socket slaveClient;
-        private static bool _closing;
         private static string _msg;
-        //private static Dictionary<string,List<string>> Dict;
         private static JObject obj1;
         private static JArray obj2;
         private static readonly Converter<char, byte> Converter = CharToByte;
-
-        //this is a real dictionary put in a list
-        private static List<object> list;
         private static HashAlgorithm _hashAlgorithm;
-
         private static byte[] bits = new byte[10240];
        
         static void Main(string[] args)
@@ -47,7 +40,16 @@ namespace PasswordCrackerSlave
             // establish TCP connection to master
             slaveClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             IPEndPoint end = new IPEndPoint(_masterIp, _masterPort);
-            slaveClient.Connect(end);
+            try
+            {
+                slaveClient.Connect(end);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.ReadKey();
+                Environment.Exit(1);
+            }
 
             // JSON encode SlaveIp & MachineName
 
@@ -58,7 +60,6 @@ namespace PasswordCrackerSlave
             build.Append(",");
             build.Append("Ip:");
             build.Append(GetLocalIP());
-            // "Name:_machineName,Ip:_slaveIp"
 
             // serialize
             var json = JsonConvert.SerializeObject(build);

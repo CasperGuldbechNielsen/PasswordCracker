@@ -14,8 +14,8 @@ namespace PasswordCrackerMaster
 {
     class Program
     {
-        private static int _port = 6789;
-        private static int threadNum = 1;
+        private static int[] _port = { 6789, 6790, 6791, 6792, 6793, 6794, 6795, 6796, 6797, 6798, 6799 };
+        private static int threadNum = 2;
         private static IPAddress _ip = IPAddress.Parse("127.0.0.1");
         private static Dictionary<string, string> _passwords = new Dictionary<string, string>
         {
@@ -48,16 +48,11 @@ namespace PasswordCrackerMaster
                 _passwordsDecoded.Add(item.Key, pass);
             }
 
-
             server = new TCPServer();
 
-            var socket = server.ServerSocket;
-
-            for (int i = 0; i < threadNum; i++)
-            {
-                Thread thread = new Thread(() => server.StartThreading(_ip, _port, socket, $"Thread {i}", _passwordsDecoded));
-                thread.Start();
-            }
+            Console.WriteLine("Starting listener on port: 6789");
+            Thread thread = new Thread(() => server.StartThreading(_ip, 6789, "Thread 1", _passwordsDecoded));
+            thread.Start();
         }
     }
 }

@@ -10,27 +10,36 @@ namespace PasswordCrackerMaster
 {
     static class MasterHandler
     {
-        private static int lastLen = 0;
+        private static List<string> _slaveListToSend = new List<string>();
+        private static int _loopVar = -1;
+        private static int _listNumsToSend;
+        private static int _rowsSent = 0;
 
-        public static string SendWork(int rowsSent, int listNumsToSend, List<string> slaveListToSend, List<string> slaveList, Dictionary<string, byte[]> password)
+        public static int listNumsToSend
         {
-            for (int i = (rowsSent + 1); i < listNumsToSend; i++)
+            get { return _listNumsToSend; }
+            set { _listNumsToSend = value; }
+        }
+
+        public static string SendWork(List<string> slaveList, Dictionary<string, byte[]> password, string name)
+        {
+            _slaveListToSend.Clear();
+
+            for (int i = (_loopVar + 1); i < _listNumsToSend; i++)
             {
-                slaveListToSend.Add(slaveList[i]);
+                _slaveListToSend.Add(slaveList[i]);
             }
 
-            var listLenght = slaveListToSend.Count();
-
-            var result = listLenght - lastLen;
+            var listLenght = _slaveListToSend.Count();
             
-            Console.WriteLine($"Sending {result} lines to slave");
+            Console.WriteLine($"=> Sending {listLenght} lines to slave {name}. Already sent {_rowsSent} to slaves.");
 
-            lastLen = listLenght;
+            _rowsSent += listLenght;
 
             List<object> objectList = new List<object>()
             {
                 { password },
-                { slaveListToSend }
+                { _slaveListToSend }
             };
 
             return JsonConvert.SerializeObject(objectList);
